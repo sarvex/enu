@@ -9,7 +9,7 @@ def NimNI8_SummaryFormatter(valobj, internal_dict):
     s = '?'
     try:
         val = valobj.GetValueAsSigned();
-        s = str(val)  + " (" + hex(val & 0xFF) + ")"
+        s = f"{str(val)} ({hex(val & 255)})"
     except:
         pass
     return s
@@ -18,7 +18,7 @@ def NimNI16_SummaryFormatter(valobj, internal_dict):
     s = '?'
     try:
         val = valobj.GetValueAsSigned();
-        s = str(val)  + " (" + hex(val & 0xFFFF) + ")"
+        s = f"{str(val)} ({hex(val & 65535)})"
     except:
         pass
     return s
@@ -27,7 +27,7 @@ def NimNI32_SummaryFormatter(valobj, internal_dict):
     s = '?'
     try:
         val = valobj.GetValueAsSigned();
-        s = str(val)  + " (" + hex(val & 0xFFFFFF) + ")"
+        s = f"{str(val)} ({hex(val & 16777215)})"
     except:
         pass
     return s
@@ -36,7 +36,7 @@ def NimNU_SummaryFormatter(valobj, internal_dict):
     s = '?'
     try:
         val = valobj.GetValueAsUnsigned();
-        s = str(val)  + " (" + hex(val) + ")"
+        s = f"{str(val)} ({hex(val)})"
     except:
         pass
     return s
@@ -54,8 +54,8 @@ def NimEnum_SummaryFormatter(valobj, internal_dict):
         # then TNimType will be NTI__OGi9bloluW89a39aqCEVLC1Xw_
         pattern = re.compile(r'^tyEnum_(.+?)_([A-Za-z0-9]+)$')
         matches = pattern.match(type_name)
-        id = matches.group(2)
-        t_nim_type = "NTI__" + id + "_"
+        id = matches[2]
+        t_nim_type = f"NTI__{id}_"
 
         # lookup the address of t_nim_type and we have the TNimType*
         target = valobj.GetTarget()
@@ -67,15 +67,15 @@ def NimEnum_SummaryFormatter(valobj, internal_dict):
 
             # evaluate
             t_nim_type_ptr = hex(file_addr)
-            expr = 'reprEnum(' + str(val) + ", (TNimType *)" + t_nim_type_ptr + ')'
+            expr = f'reprEnum({str(val)}, (TNimType *){t_nim_type_ptr})'
             options = lldb.SBExpressionOptions()
 
             expr_value = valobj.GetFrame().EvaluateExpression(expr)
-            if (expr_value.error.fail):
+            if expr_value.error.fail:
                 s = str(val)
             else:
                 m = re.search(r'.*"(.*)".*', str(expr_value))
-                s = m.group(1)
+                s = m[1]
 
     except:
         pass
@@ -109,7 +109,8 @@ class NimSeqProvider:
         try:
             offset = index * self.data_size
             return self.start.CreateChildAtOffset(
-                '[' + str(index) + ']', offset, self.data_type)
+                f'[{str(index)}]', offset, self.data_type
+            )
         except:
             return None
 
@@ -194,7 +195,8 @@ class NimTableProvider:
         try:
             offset = index * self.data_size
             return self.start.CreateChildAtOffset(
-                '[' + str(index) + ']', offset, self.data_type)
+                f'[{str(index)}]', offset, self.data_type
+            )
         except:
             return None
 
@@ -211,8 +213,7 @@ class NimTableProvider:
             self.table = {}
             self.ary = []
             count = self.num_elem_children()
-            if count > 1000:
-                count = 1000
+            count = min(count, 1000)
             for i in range(self.num_elem_children()):
                 elem = self.get_elem_at_index(i)
                 field0 = elem.GetChildMemberWithName('Field0')
